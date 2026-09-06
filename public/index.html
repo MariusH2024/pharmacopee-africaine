@@ -1,0 +1,391 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Pharmacopée Africaine — Base de données ethnobotanique</title>
+  <meta name="description" content="Plateforme SaaS de référence sur la flore médicinale africaine, la nutrition et la pharmacopée traditionnelle."/>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🌿</text></svg>"/>
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    :root {
+      --green-50: #EAF3DE; --green-100: #C0DD97; --green-200: #97C459;
+      --green-600: #3B6D11; --green-700: #2E560D; --green-800: #27500A;
+      --amber-50: #FAEEDA; --amber-100: #FAC775; --amber-600: #854F0B;
+      --teal-50: #E1F5EE; --teal-100: #9FE1CB; --teal-600: #0F6E56; --teal-800: #085041;
+      --coral-50: #FAECE7; --coral-100: #F5C4B3; --coral-600: #993C1D;
+      --red-50: #FCEBEB; --red-200: #F09595; --red-600: #A32D2D;
+      --gray-0: #fff; --gray-10: #F8F8F6; --gray-20: #F1EFE8;
+      --gray-200: #B4B2A9; --gray-400: #888780; --gray-600: #5F5E5A;
+      --gray-900: #2C2C2A;
+      --font: system-ui, -apple-system, 'Segoe UI', sans-serif;
+      --mono: 'SF Mono', 'Fira Code', monospace;
+      --radius: 8px;
+    }
+    body { font-family: var(--font); background: var(--gray-10); color: var(--gray-900); min-height: 100vh; }
+
+    /* NAV */
+    nav { background: var(--gray-0); border-bottom: 0.5px solid #e0ddd6; padding: 0 2rem; display: flex; align-items: center; gap: 16px; height: 56px; position: sticky; top: 0; z-index: 100; }
+    .nav-logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-mark { width: 34px; height: 34px; background: var(--green-600); border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+    .nav-title { font-size: 15px; font-weight: 600; color: var(--gray-900); }
+    .nav-sub { font-size: 11px; color: var(--gray-400); margin-top: 1px; }
+    .nav-badge { margin-left: auto; background: var(--green-50); color: var(--green-800); border: 0.5px solid var(--green-100); border-radius: 20px; padding: 3px 10px; font-size: 11px; font-weight: 500; }
+
+    /* HERO */
+    .hero { background: linear-gradient(135deg, var(--green-600) 0%, #2a5a0a 100%); padding: 3rem 2rem 2.5rem; text-align: center; }
+    .hero h1 { font-size: 28px; font-weight: 700; color: #fff; margin-bottom: 8px; }
+    .hero p { font-size: 15px; color: rgba(255,255,255,0.8); max-width: 560px; margin: 0 auto 1.5rem; line-height: 1.6; }
+    .search-wrap { max-width: 580px; margin: 0 auto; display: flex; gap: 8px; }
+    .search-wrap input { flex: 1; padding: 12px 16px; border: none; border-radius: var(--radius); font-size: 15px; outline: none; box-shadow: 0 2px 8px rgba(0,0,0,0.15); }
+    .search-wrap input:focus { box-shadow: 0 0 0 3px rgba(255,255,255,0.3), 0 2px 8px rgba(0,0,0,0.15); }
+    .btn-generate { padding: 12px 22px; background: var(--amber-100); color: var(--amber-600); border: none; border-radius: var(--radius); font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+    .btn-generate:hover { background: #f5b84e; }
+    .btn-generate:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* SUGGESTIONS */
+    .suggestions { display: flex; flex-wrap: wrap; justify-content: center; gap: 6px; margin-top: 12px; }
+    .sugg { padding: 4px 12px; background: rgba(255,255,255,0.15); border: 0.5px solid rgba(255,255,255,0.3); border-radius: 20px; color: rgba(255,255,255,0.9); font-size: 12px; cursor: pointer; transition: background 0.15s; }
+    .sugg:hover { background: rgba(255,255,255,0.25); }
+
+    /* MAIN */
+    main { max-width: 900px; margin: 0 auto; padding: 2rem 1.5rem; }
+
+    /* STATS */
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 10px; margin-bottom: 2rem; }
+    .stat-card { background: var(--gray-0); border: 0.5px solid #e0ddd6; border-radius: 10px; padding: 14px 16px; text-align: center; }
+    .stat-num { font-size: 22px; font-weight: 700; color: var(--green-600); }
+    .stat-label { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+
+    /* ERROR */
+    .error-box { background: var(--red-50); border: 0.5px solid var(--red-200); border-radius: var(--radius); padding: 10px 14px; font-size: 13px; color: var(--red-600); margin-bottom: 1rem; display: none; }
+
+    /* OUTPUT CARD */
+    .output-card { background: var(--gray-0); border: 0.5px solid #e0ddd6; border-radius: 12px; overflow: hidden; }
+    .card-header { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px; border-bottom: 0.5px solid #e0ddd6; background: var(--gray-10); }
+    .card-header-left { display: flex; align-items: center; gap: 10px; }
+    .status-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--gray-200); }
+    .status-dot.live { background: #22c55e; animation: blink 2s infinite; }
+    @keyframes blink { 0%,100%{opacity:1}50%{opacity:.3} }
+    .card-title { font-size: 14px; font-weight: 500; }
+    .btn-copy { font-size: 12px; color: var(--gray-600); background: none; border: 0.5px solid #e0ddd6; border-radius: var(--radius); padding: 5px 12px; cursor: pointer; display: none; }
+    .btn-copy:hover { border-color: var(--gray-400); color: var(--gray-900); }
+
+    /* PROGRESS */
+    .progress { height: 2px; background: var(--green-50); display: none; overflow: hidden; }
+    .progress.active { display: block; }
+    .progress-bar { height: 100%; background: var(--green-600); animation: progress 2s ease-in-out infinite; }
+    @keyframes progress { 0%{width:0;margin-left:0}50%{width:60%;margin-left:20%}100%{width:0;margin-left:100%} }
+
+    /* TABS */
+    .tabs { display: flex; border-bottom: 0.5px solid #e0ddd6; }
+    .tab { padding: 10px 18px; font-size: 13px; color: var(--gray-400); cursor: pointer; border-bottom: 2px solid transparent; margin-bottom: -0.5px; transition: color 0.15s; }
+    .tab:hover { color: var(--gray-900); }
+    .tab.active { color: var(--green-700); border-bottom-color: var(--green-600); font-weight: 500; }
+    .tab-panel { display: none; padding: 1.25rem 1.5rem; }
+    .tab-panel.active { display: block; }
+
+    /* PLACEHOLDER */
+    .placeholder { padding: 4rem 1rem; text-align: center; color: var(--gray-400); }
+    .placeholder .icon { font-size: 52px; display: block; margin-bottom: 12px; }
+    .placeholder p { font-size: 14px; line-height: 1.6; max-width: 320px; margin: 0 auto; }
+
+    /* FICHE STYLES */
+    .fiche-header { display: flex; justify-content: space-between; align-items: flex-start; flex-wrap: wrap; gap: 12px; margin-bottom: 1.25rem; }
+    .fiche-nom { font-size: 22px; font-weight: 700; color: var(--gray-900); }
+    .fiche-sci { font-size: 13px; color: var(--gray-400); font-style: italic; margin-top: 2px; }
+    .fiche-famille { font-size: 12px; color: var(--gray-400); margin-top: 2px; }
+    .stars { color: #f59e0b; font-size: 18px; letter-spacing: 1px; }
+    .note-info { font-size: 12px; color: var(--gray-400); margin-top: 3px; text-align: right; }
+    .section-label { font-size: 11px; font-weight: 600; color: var(--gray-400); letter-spacing: .06em; text-transform: uppercase; margin-bottom: 8px; }
+    .tags { display: flex; flex-wrap: wrap; gap: 5px; margin-bottom: 1rem; }
+    .tag { display: inline-block; padding: 3px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; }
+    .tag-green { background: var(--green-50); color: var(--green-800); }
+    .tag-amber { background: var(--amber-50); color: var(--amber-600); }
+    .tag-teal { background: var(--teal-50); color: var(--teal-800); }
+    .tag-coral { background: var(--coral-50); color: var(--coral-600); }
+    .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 1rem; }
+    .metric { background: var(--gray-10); border-radius: var(--radius); padding: 10px 14px; }
+    .metric .label { font-size: 11px; color: var(--gray-400); margin-bottom: 3px; }
+    .metric .value { font-size: 15px; font-weight: 600; color: var(--gray-900); }
+    .prep-card { background: var(--teal-50); border: 0.5px solid var(--teal-100); border-radius: var(--radius); padding: 12px 14px; margin-bottom: 8px; }
+    .prep-badge { display: inline-block; background: var(--teal-800); color: #fff; font-size: 11px; font-weight: 600; padding: 2px 9px; border-radius: 20px; margin-bottom: 6px; }
+    .prep-partie { font-size: 11px; color: var(--teal-600); margin-bottom: 5px; }
+    .prep-desc { font-size: 13px; color: var(--gray-900); line-height: 1.5; }
+    .warning-item { display: flex; gap: 8px; font-size: 13px; padding: 6px 0; border-bottom: 0.5px solid #f5c6c6; color: var(--gray-900); }
+    .warning-item:last-child { border-bottom: none; }
+    .warning-icon { color: #dc2626; flex-shrink: 0; }
+    .temoignage { background: var(--gray-10); border-radius: var(--radius); padding: 12px 14px; }
+    .temo-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 6px; }
+    .temo-user { font-size: 13px; font-weight: 600; }
+    .temo-pays { font-size: 12px; color: var(--gray-400); font-weight: 400; }
+    .temo-text { font-size: 13px; color: var(--gray-600); font-style: italic; line-height: 1.5; }
+
+    /* JSON */
+    .json-wrap { max-height: 500px; overflow-y: auto; background: #1e1e1e; border-radius: 0 0 12px 12px; padding: 1.25rem; font-family: var(--mono); font-size: 12px; line-height: 1.7; }
+    .json-wrap .jk { color: #9cdcfe; }
+    .json-wrap .jv { color: #ce9178; }
+    .json-wrap .jn { color: #b5cea8; }
+    .json-wrap .jb { color: #569cd6; }
+
+    /* FOOTER */
+    footer { text-align: center; padding: 2rem; font-size: 12px; color: var(--gray-400); border-top: 0.5px solid #e0ddd6; margin-top: 3rem; }
+
+    @media (max-width: 600px) {
+      .search-wrap { flex-direction: column; }
+      .stats { grid-template-columns: 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+      .fiche-header { flex-direction: column; }
+      nav { padding: 0 1rem; }
+      main { padding: 1.5rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+<nav>
+  <a class="nav-logo" href="/">
+    <div class="logo-mark">🌿</div>
+    <div>
+      <div class="nav-title">Pharmacopée Africaine</div>
+      <div class="nav-sub">Base ethnobotanique & nutritionnelle</div>
+    </div>
+  </a>
+  <div class="nav-badge">Bêta publique</div>
+</nav>
+
+<div class="hero">
+  <h1>Savoirs ancestraux africains, numérisés</h1>
+  <p>Génération de fiches scientifiques complètes sur la flore médicinale africaine — botanique, nutrition, ethnopharmacopée.</p>
+  <div class="search-wrap">
+    <input type="text" id="plantInput" placeholder="Ex: Moringa, Baobab, Kinkeliba, Néré…" autocomplete="off"/>
+    <button class="btn-generate" id="genBtn" onclick="generer()">Générer la fiche</button>
+  </div>
+  <div class="suggestions" id="suggestions"></div>
+</div>
+
+<main>
+  <div class="stats">
+    <div class="stat-card"><div class="stat-num" id="totalFiches">0</div><div class="stat-label">Fiches générées cette session</div></div>
+    <div class="stat-card"><div class="stat-num">4 500+</div><div class="stat-label">Plantes africaines documentées</div></div>
+    <div class="stat-card"><div class="stat-num">12</div><div class="stat-label">Zones ethnobotaniques couvertes</div></div>
+  </div>
+
+  <div class="error-box" id="errorBox"></div>
+
+  <div class="output-card">
+    <div class="card-header">
+      <div class="card-header-left">
+        <div class="status-dot" id="statusDot"></div>
+        <span class="card-title" id="cardTitle">En attente d'une plante</span>
+      </div>
+      <button class="btn-copy" id="copyBtn" onclick="copierJSON()">📋 Copier JSON</button>
+    </div>
+    <div class="progress" id="progress"><div class="progress-bar"></div></div>
+
+    <div id="tabsBar" style="display:none">
+      <div class="tabs">
+        <div class="tab active" onclick="switchTab('apercu',this)">Aperçu</div>
+        <div class="tab" onclick="switchTab('nutrition',this)">Nutrition</div>
+        <div class="tab" onclick="switchTab('medecine',this)">Médecine</div>
+        <div class="tab" onclick="switchTab('json',this)">JSON brut</div>
+      </div>
+    </div>
+
+    <div id="apercuPanel" class="tab-panel active">
+      <div class="placeholder">
+        <span class="icon">🌱</span>
+        <p>Entrez le nom d'une plante africaine pour générer sa fiche complète avec données nutritionnelles et usages médicinaux traditionnels.</p>
+      </div>
+    </div>
+    <div id="nutritionPanel" class="tab-panel"></div>
+    <div id="medecinePanel" class="tab-panel"></div>
+    <div id="jsonPanel" class="tab-panel" style="padding:0">
+      <div class="json-wrap" id="jsonDisplay"></div>
+    </div>
+  </div>
+</main>
+
+<footer>
+  Pharmacopée Africaine · Données générées par IA à titre informatif · Consultez toujours un professionnel de santé
+</footer>
+
+<script>
+const SUGGES = ["Moringa","Baobab","Kinkeliba","Néré","Gingembre","Hibiscus","Rooibos","Karité","Neem","Gombo"];
+let currentData = null;
+let ficheCount = 0;
+
+// Afficher les suggestions
+const sugDiv = document.getElementById('suggestions');
+SUGGES.forEach(s => {
+  const el = document.createElement('span');
+  el.className = 'sugg';
+  el.textContent = s;
+  el.onclick = () => { document.getElementById('plantInput').value = s; generer(); };
+  sugDiv.appendChild(el);
+});
+
+// Input: Entrée clavier
+document.getElementById('plantInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') generer();
+});
+
+function switchTab(tab, el) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+  el.classList.add('active');
+  document.getElementById(tab + 'Panel').classList.add('active');
+}
+
+function hl(json) {
+  return json.replace(/("(\\u[a-zA-Z0-9]{4}|\\[^u]|[^\\"])*"(\s*:)?|\b(true|false|null)\b|-?\d+(?:\.\d*)?(?:[eE][+\-]?\d+)?)/g, m => {
+    if (/^"/.test(m)) return /:$/.test(m) ? `<span class="jk">${m}</span>` : `<span class="jv">${m}</span>`;
+    if (/true|false/.test(m)) return `<span class="jb">${m}</span>`;
+    return `<span class="jn">${m}</span>`;
+  });
+}
+
+function renderApercu(d) {
+  const id = d.identification, c = d.communaute_et_evaluation;
+  const note = parseFloat(c.note_moyenne) || 4.5;
+  const stars = '★'.repeat(Math.round(note)) + '☆'.repeat(5 - Math.round(note));
+  const noms = (id.noms_locaux_africains || []).map(n => `<span class="tag tag-green">${n.langue_ethnie} : <strong>${n.nom}</strong></span>`).join('');
+  const orig = (id.origine_geographique || []).map(o => `<span class="tag tag-teal">${o}</span>`).join('');
+  const temo = c.temoignages_types?.[0];
+  document.getElementById('apercuPanel').innerHTML = `
+    <div class="fiche-header">
+      <div>
+        <div class="fiche-nom">${id.nom_commun}</div>
+        <div class="fiche-sci">${id.nom_scientifique}</div>
+        <div class="fiche-famille">${id.famille_botanique}</div>
+      </div>
+      <div>
+        <div class="stars">${stars}</div>
+        <div class="note-info">${note}/5 · ${c.nombre_avis} avis</div>
+      </div>
+    </div>
+    <div style="margin-bottom:1rem"><div class="section-label">Catégorie</div><span class="tag tag-amber">${id.categorie}</span></div>
+    <div style="margin-bottom:1rem"><div class="section-label">Noms locaux africains</div><div class="tags">${noms || '<span style="color:#aaa">—</span>'}</div></div>
+    <div style="margin-bottom:1rem"><div class="section-label">Origine géographique</div><div class="tags">${orig || '<span style="color:#aaa">—</span>'}</div></div>
+    ${temo ? `<div><div class="section-label">Témoignage communauté</div>
+      <div class="temoignage">
+        <div class="temo-header"><span class="temo-user">${temo.utilisateur} <span class="temo-pays">· ${temo.origine}</span></span><span class="stars" style="font-size:13px">${'★'.repeat(temo.note)}</span></div>
+        <div class="temo-text">« ${temo.commentaire} »</div>
+      </div></div>` : ''}`;
+}
+
+function renderNutrition(d) {
+  const n = d.apports_nutritionnels, m = n.macronutriments;
+  const micros = (n.micronutriments_cles || []).map(x => `<span class="tag tag-teal">${x}</span>`).join('');
+  document.getElementById('nutritionPanel').innerHTML = `
+    <div class="grid-2">
+      <div class="metric"><div class="label">Énergie / 100g</div><div class="value">${n.valeur_energetique_100g}</div></div>
+      <div class="metric"><div class="label">Profil glycémique</div><div class="value">${n.profil_glycemique}</div></div>
+      <div class="metric"><div class="label">Glucides</div><div class="value">${m.glucides}</div></div>
+      <div class="metric"><div class="label">Protéines</div><div class="value">${m.proteines}</div></div>
+      <div class="metric"><div class="label">Lipides</div><div class="value">${m.lipides}</div></div>
+      <div class="metric"><div class="label">Fibres</div><div class="value">${m.fibres}</div></div>
+    </div>
+    <div class="section-label">Micronutriments clés</div>
+    <div class="tags">${micros}</div>`;
+}
+
+function renderMedecine(d) {
+  const v = d.vertus_et_usages_medecine_africaine;
+  const props = (v.proprietes_therapeutiques || []).map(p => `<span class="tag tag-green">${p}</span>`).join('');
+  const maladies = (v.maladies_et_maux_traites || []).map(p => `<span class="tag tag-amber">${p}</span>`).join('');
+  const organes = (v.organes_utilises || []).map(p => `<span class="tag tag-coral">${p}</span>`).join('');
+  const preps = (v.modes_de_preparation_traditionnels || []).map(p => `
+    <div class="prep-card">
+      <span class="prep-badge">${p.forme}</span>
+      <div class="prep-partie">Partie utilisée : ${p.partie_utilisee}</div>
+      <div class="prep-desc">${p.recette_usage}</div>
+    </div>`).join('');
+  const warns = (v.precautions_et_contre_indications || []).map(w => `
+    <div class="warning-item"><span class="warning-icon">⚠</span><span>${w}</span></div>`).join('');
+  document.getElementById('medecinePanel').innerHTML = `
+    <div style="margin-bottom:1rem"><div class="section-label">Propriétés thérapeutiques</div><div class="tags">${props}</div></div>
+    <div style="margin-bottom:1rem"><div class="section-label">Maladies & maux traités</div><div class="tags">${maladies}</div></div>
+    <div style="margin-bottom:1rem"><div class="section-label">Organes utilisés</div><div class="tags">${organes}</div></div>
+    <div style="margin-bottom:1rem"><div class="section-label">Préparations traditionnelles</div>${preps}</div>
+    <div><div class="section-label" style="color:#dc2626">Précautions & contre-indications</div>
+    <div style="background:#fff5f5;border-radius:8px;padding:4px 12px">${warns}</div></div>`;
+}
+
+async function generer() {
+  const plant = document.getElementById('plantInput').value.trim();
+  if (!plant) { showError("Entrez le nom d'une plante."); return; }
+  hideError();
+  setLoading(true, plant);
+
+  try {
+    const resp = await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ plant })
+    });
+    const result = await resp.json();
+
+    if (!resp.ok || !result.success) {
+      throw new Error(result.error || 'Erreur inconnue');
+    }
+
+    currentData = result.data;
+    ficheCount++;
+    document.getElementById('totalFiches').textContent = ficheCount;
+    renderResult(result.data);
+  } catch (err) {
+    showError('Erreur : ' + err.message);
+    setLoading(false, null);
+  }
+}
+
+function renderResult(d) {
+  setLoading(false, null);
+  const id = d.identification;
+  document.getElementById('cardTitle').textContent = `${id.nom_commun} — ${id.nom_scientifique}`;
+  document.getElementById('statusDot').className = 'status-dot live';
+  document.getElementById('copyBtn').style.display = 'inline-block';
+  document.getElementById('tabsBar').style.display = 'block';
+  document.getElementById('jsonDisplay').innerHTML = hl(JSON.stringify(d, null, 2));
+  renderApercu(d);
+  renderNutrition(d);
+  renderMedecine(d);
+  // Revenir à l'onglet aperçu
+  document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('.tab')[0].classList.add('active');
+  document.getElementById('apercuPanel').classList.add('active');
+}
+
+function setLoading(on, plant) {
+  document.getElementById('genBtn').disabled = on;
+  document.getElementById('progress').className = 'progress' + (on ? ' active' : '');
+  document.getElementById('statusDot').className = on ? 'status-dot live' : 'status-dot';
+  document.getElementById('cardTitle').textContent = on ? `Analyse de « ${plant} » en cours…` : 'En attente d\'une plante';
+  if (on) {
+    document.getElementById('tabsBar').style.display = 'none';
+    document.querySelectorAll('.tab-panel').forEach(t => t.classList.remove('active'));
+    document.getElementById('apercuPanel').classList.add('active');
+    document.getElementById('apercuPanel').innerHTML = `<div class="placeholder"><span class="icon">⏳</span><p>Génération de la fiche en cours…<br><small style="color:#aaa">Analyse botanique, nutritionnelle et ethnopharmacopée</small></p></div>`;
+  }
+}
+
+function showError(msg) {
+  const b = document.getElementById('errorBox');
+  b.textContent = '⚠ ' + msg;
+  b.style.display = 'block';
+}
+function hideError() { document.getElementById('errorBox').style.display = 'none'; }
+
+function copierJSON() {
+  if (!currentData) return;
+  navigator.clipboard.writeText(JSON.stringify(currentData, null, 2)).then(() => {
+    const btn = document.getElementById('copyBtn');
+    btn.textContent = '✅ Copié !';
+    setTimeout(() => btn.textContent = '📋 Copier JSON', 2000);
+  });
+}
+</script>
+</body>
+</html>

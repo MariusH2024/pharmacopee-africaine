@@ -1,0 +1,19 @@
+{
+  "name": "pharmacopee-africaine",
+  "version": "1.0.0",
+  "description": "SaaS de référence sur la pharmacopée traditionnelle africaine",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18.0.0"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.18.2"
+  },
+  "keywords": ["pharmacopée", "afrique", "botanique", "ethnobotanique", "SaaS"],
+  "license": "MIT"
+}
