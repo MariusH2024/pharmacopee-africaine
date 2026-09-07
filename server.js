@@ -9,7 +9,7 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Proxy sécurisé vers l'API Anthropic
+// Proxy sécurisé vers l'API Groq (100% gratuit, sans carte bancaire)
 // La clé API reste côté serveur, jamais exposée au navigateur
 app.post('/api/generate', async (req, res) => {
   const { plant } = req.body;
@@ -18,12 +18,12 @@ app.post('/api/generate', async (req, res) => {
     return res.status(400).json({ error: 'Nom de plante invalide.' });
   }
 
-  const ANTHROPIC_API_KEY = process.env.ANTHROPIC_API_KEY;
-  if (!ANTHROPIC_API_KEY) {
-    return res.status(500).json({ error: 'Clé API non configurée sur le serveur.' });
+  const GROQ_API_KEY = process.env.GROQ_API_KEY;
+  if (!GROQ_API_KEY) {
+    return res.status(500).json({ error: 'Clé API Groq non configurée sur le serveur.' });
   }
 
-  const systemPrompt = `Tu es un expert botaniste, nutritionniste et ethnopharmacologue spécialisé en pharmacopée africaine. Tu génères des fiches JSON structurées et rigoureuses. Ne génère AUCUN texte en dehors du JSON. Réponds UNIQUEMENT avec un objet JSON valide, sans balises markdown, sans commentaires.`;
+  const systemPrompt = `Tu es un expert botaniste, nutritionniste et ethnopharmacologue spécialisé en pharmacopée africaine. Tu génères des fiches JSON structurées et rigoureuses. Ne génère AUCUN texte en dehors du JSON. Réponds UNIQUEMENT avec un objet JSON valide, sans balises markdown, sans commentaires, sans texte avant ou après le JSON.`;
 
   const userPrompt = `Génère une fiche complète pour : ${plant.trim()}
 
@@ -61,32 +61,39 @@ Respecte EXACTEMENT cette structure JSON :
 Mets l'accent sur les savoirs ancestraux d'Afrique de l'Ouest, Centrale, Orientale, Australe et du Nord. Inclus les noms vernaculaires authentiques dans au moins 4 langues africaines différentes. Sois précis sur les préparations traditionnelles.`;
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    // Groq utilise une API 100% compatible OpenAI
+    const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'x-api-key': ANTHROPIC_API_KEY,
-        'anthropic-version': '2023-06-01'
+        'Authorization': `Bearer ${GROQ_API_KEY}`
       },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-6',
+        model: 'llama-3.3-70b-versatile',  // Modèle gratuit le plus puissant de Groq
         max_tokens: 2000,
-        system: systemPrompt,
-        messages: [{ role: 'user', content: userPrompt }]
+        temperature: 0.3,                   // Faible température = JSON plus fiable et précis
+        response_format: { type: 'json_object' }, // Force la sortie JSON pure
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ]
       })
     });
 
     if (!response.ok) {
       const err = await response.text();
-      return res.status(response.status).json({ error: `Erreur API Anthropic: ${err}` });
+      return res.status(response.status).json({ error: `Erreur API Groq: ${err}` });
     }
 
     const data = await response.json();
-    const raw = data.content.filter(b => b.type === 'text').map(b => b.text).join('');
+
+    // Format OpenAI : data.choices[0].message.content
+    const raw = data.choices?.[0]?.message?.content || '';
     const clean = raw.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
 
     res.json({ success: true, data: parsed });
+
   } catch (err) {
     console.error('Erreur génération fiche:', err.message);
     res.status(500).json({ error: 'Erreur lors de la génération. Réessayez.' });
