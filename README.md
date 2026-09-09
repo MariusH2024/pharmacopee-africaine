@@ -3,9 +3,9 @@
 Plateforme de référence sur la flore médicinale africaine, la nutrition et la pharmacopée traditionnelle.
 
 ## Stack technique
-- **Backend** : Node.js + Express (proxy sécurisé vers l'API Anthropic)
+- **Backend** : Node.js + Express (proxy sécurisé vers l'API Groq)
 - **Frontend** : HTML/CSS/JS vanille (aucun framework requis)
-- **IA** : Claude Sonnet via l'API Anthropic
+- **IA** : Llama 3.3 70B via l'API Groq (100% gratuit, sans carte bancaire)
 - **Hébergement** : Render (free tier)
 
 ## Installation locale
@@ -35,7 +35,7 @@ npm start
 4. Configurer :
    - **Build Command** : `npm install`
    - **Start Command** : `npm start`
-   - **Environment Variable** : `ANTHROPIC_API_KEY=sk-ant-...`
+   - **Environment Variable** : `GROQ_API_KEY=gsk_...` (obtenez-la sur console.groq.com)
 5. Deploy !
 
 ## Structure du projet
