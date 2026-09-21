@@ -20,7 +20,7 @@ npm install
 
 # 3. Créer le fichier .env
 cp .env.example .env
-# Renseignez ANTHROPIC_API_KEY dans .env
+# Renseignez GROQ_API_KEY dans .env
 
 # 4. Lancer le serveur
 npm start
@@ -42,7 +42,7 @@ npm start
 
 ```
 pharmacopee-africaine/
-├── server.js          # Serveur Express + proxy API Anthropic
+├── server.js          # Serveur Express + proxy API Groq
 ├── package.json       # Dépendances Node.js
 ├── .env.example       # Template variables d'environnement
 ├── .gitignore         # Exclut node_modules et .env
