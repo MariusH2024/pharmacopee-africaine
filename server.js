@@ -9,7 +9,10 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Proxy sécurisé vers l'API Mistral AI (gratuit, sans restriction géographique)
+// Fonction d'attente
+const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+// Proxy sécurisé vers l'API Mistral AI
 app.post('/api/generate', async (req, res) => {
   const { plant } = req.body;
 
@@ -59,8 +62,8 @@ Respecte EXACTEMENT cette structure JSON :
 
 Mets l'accent sur les savoirs ancestraux d'Afrique de l'Ouest, Centrale, Orientale, Australe et du Nord. Inclus les noms vernaculaires authentiques dans au moins 4 langues africaines différentes. Sois précis sur les préparations traditionnelles.`;
 
-  try {
-    // API Mistral AI
+  // Appel API avec retry automatique (3 tentatives)
+  const callMistral = async (attempt = 1) => {
     const response = await fetch('https://api.mistral.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -79,14 +82,29 @@ Mets l'accent sur les savoirs ancestraux d'Afrique de l'Ouest, Centrale, Orienta
       })
     });
 
+    // Rate limit → on attend et on réessaie automatiquement
+    if (response.status === 429 && attempt < 3) {
+      const delai = attempt * 10000; // 10s puis 20s
+      console.log(`Rate limit — tentative ${attempt}/3 — attente ${delai/1000}s...`);
+      await wait(delai);
+      return callMistral(attempt + 1);
+    }
+
+    return response;
+  };
+
+  try {
+    const response = await callMistral();
+
     if (!response.ok) {
+      if (response.status === 429) {
+        return res.status(429).json({ error: 'Limite atteinte — patientez 1 minute et réessayez.' });
+      }
       const err = await response.text();
       return res.status(response.status).json({ error: `Erreur API Mistral: ${err}` });
     }
 
     const data = await response.json();
-
-    // Format OpenAI compatible : data.choices[0].message.content
     const raw = data.choices?.[0]?.message?.content || '';
     const clean = raw.replace(/```json|```/g, '').trim();
     const parsed = JSON.parse(clean);
